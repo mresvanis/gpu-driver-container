@@ -394,8 +394,9 @@ _load_driver() {
         set +o xtrace -o nounset
     fi
 
-    echo "Starting NVIDIA persistence daemon..."
-    nvidia-persistenced --persistence-mode
+    echo "Skipping NVIDIA persistence daemon..."
+    # echo "Starting NVIDIA persistence daemon..."
+    # nvidia-persistenced --persistence-mode
 
     if [ "${DRIVER_TYPE}" = "vgpu" ]; then
         echo "Copying gridd.conf..."
@@ -415,12 +416,17 @@ _load_driver() {
 
     if _assert_nvlink5_system; then
         _ensure_nvlink5_prerequisites || return 1
-        echo "Starting NVIDIA fabric manager daemon for NVLink5+..."
 
         fm_config_file=/usr/share/nvidia/nvswitch/fabricmanager.cfg
+        echo "Updating NVIDIA fabric manager configuration to shared NVSwitch mode..."
+        sed -i 's/FABRIC_MODE=0/FABRIC_MODE=1/g' $fm_config_file
+
         fm_pid_file=/var/run/nvidia-fabricmanager/nv-fabricmanager.pid
         nvlsm_config_file=/usr/share/nvidia/nvlsm/nvlsm.conf
         nvlsm_pid_file=/var/run/nvidia-fabricmanager/nvlsm.pid
+
+        echo "Starting NVIDIA fabric manager daemon for NVLink5+..."
+
         /usr/bin/nvidia-fabricmanager-start.sh --mode start \
                                                --fm-config-file $fm_config_file \
                                                --fm-pid-file $fm_pid_file \
@@ -429,8 +435,13 @@ _load_driver() {
 
     # If not a NVLink5+ switch, check for the presence of NVLink4 (or below) switches
     elif _assert_nvswitch_system; then
+        fm_config_file=/usr/share/nvidia/nvswitch/fabricmanager.cfg
+
+        echo "Updating NVIDIA fabric manager configuration to shared NVSwitch mode..."
+        sed -i 's/FABRIC_MODE=0/FABRIC_MODE=1/g' $fm_config_file
+
         echo "Starting NVIDIA fabric manager daemon..."
-        nv-fabricmanager -c /usr/share/nvidia/nvswitch/fabricmanager.cfg
+        nv-fabricmanager -c $fm_config_file
     fi
 }
 

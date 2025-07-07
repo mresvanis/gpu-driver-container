@@ -69,8 +69,15 @@ RUN if [ "$DRIVER_TYPE" != "vgpu" ]; then \
     chmod +x  NVIDIA-Linux-$DRIVER_ARCH-$DRIVER_VERSION.run && \
     versionArray=(${DRIVER_VERSION//./ }); \
     DRIVER_BRANCH=${versionArray[0]}; \
+    dnf install git -y && \
+    dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
     dnf module enable -y nvidia-driver:${DRIVER_BRANCH}-dkms && \
-    dnf install -y nvidia-fabric-manager-${DRIVER_VERSION}-1 libnvidia-nscq-${DRIVER_BRANCH}-${DRIVER_VERSION}-1; fi
+    dnf install -y nvidia-fabric-manager-${DRIVER_VERSION}-1 nvidia-fabric-manager-devel-${DRIVER_VERSION}-1 libnvidia-nscq-${DRIVER_BRANCH}-${DRIVER_VERSION}-1 jsoncpp-devel gcc-c++ make && \
+    git clone https://github.com/NVIDIA/Fabric-Manager-Client.git && \
+    cd Fabric-Manager-Client && \
+    make fmpm && \
+    cp fmpm /usr/bin/ && \
+    chmod +x /usr/bin/fmpm; fi
 
 RUN if [ "$DRIVER_TYPE" != "vgpu" ] && [ "$DRIVER_BRANCH" -ge "550" ]; then \
     dnf install -y nvidia-imex-${DRIVER_BRANCH}-${DRIVER_VERSION}-1; fi
