@@ -356,6 +356,7 @@ _load_driver() {
     local nv_fw_search_path="$RUN_DIR/driver/lib/firmware"
     local set_fw_path="true"
     local fw_path_config_file="/sys/module/firmware_class/parameters/path"
+    local fmpm_socket_path="/run/nvidia-fabricmanager/fmpm.sock"
     for param in "${NVIDIA_MODULE_PARAMS[@]}"; do
         if [[ "$param" == "NVreg_EnableGpuFirmware=0" ]]; then
           set_fw_path="false"
@@ -421,6 +422,10 @@ _load_driver() {
         echo "Updating NVIDIA fabric manager configuration to shared NVSwitch mode..."
         sed -i 's/FABRIC_MODE=0/FABRIC_MODE=1/g' $fm_config_file
 
+        echo "Updating NVIDIA fabric manager configuration to use a UNIX socket instead of TCP: ${fmpm_socket_path}"
+        sed -i "s|^UNIX_SOCKET_PATH=.*|UNIX_SOCKET_PATH=${fmpm_socket_path}|g" $fm_config_file
+        sed -i "s|^FM_CMD_UNIX_SOCKET_PATH=.*|FM_CMD_UNIX_SOCKET_PATH=${fmpm_socket_path}|g" $fm_config_file
+
         fm_pid_file=/var/run/nvidia-fabricmanager/nv-fabricmanager.pid
         nvlsm_config_file=/usr/share/nvidia/nvlsm/nvlsm.conf
         nvlsm_pid_file=/var/run/nvidia-fabricmanager/nvlsm.pid
@@ -439,6 +444,10 @@ _load_driver() {
 
         echo "Updating NVIDIA fabric manager configuration to shared NVSwitch mode..."
         sed -i 's/FABRIC_MODE=0/FABRIC_MODE=1/g' $fm_config_file
+
+        echo "Updating NVIDIA fabric manager configuration to use a UNIX socket instead of TCP: ${fmpm_socket_path}"
+        sed -i "s|^UNIX_SOCKET_PATH=.*|UNIX_SOCKET_PATH=${fmpm_socket_path}|g" $fm_config_file
+        sed -i "s|^FM_CMD_UNIX_SOCKET_PATH=.*|FM_CMD_UNIX_SOCKET_PATH=${fmpm_socket_path}|g" $fm_config_file
 
         echo "Starting NVIDIA fabric manager daemon..."
         nv-fabricmanager -c $fm_config_file
