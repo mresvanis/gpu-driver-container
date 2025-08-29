@@ -452,6 +452,36 @@ _load_driver() {
         echo "Starting NVIDIA fabric manager daemon..."
         nv-fabricmanager -c $fm_config_file
     fi
+
+    echo "Capturing GPU PCI to Module ID mapping..."
+    if command -v nvidia-smi >/dev/null 2>&1; then
+        gpu_mapping=$(nvidia-smi -q |egrep "Module|Bus" |grep Id)
+        if [ -n "$gpu_mapping" ]; then
+            echo "$gpu_mapping"
+            # Parse and convert to JSON format
+            json_entries=""
+            module_id=""
+            while IFS= read -r line; do
+                if [[ "$line" =~ Module\ Id.*:\ ([0-9]+) ]]; then
+                    module_id="${BASH_REMATCH[1]}"
+                elif [[ "$line" =~ Bus\ Id.*:\ ([0-9A-Fa-f:\.]+) ]] && [ -n "$module_id" ]; then
+                    pci_id="${BASH_REMATCH[1]}"
+                    if [ -n "$json_entries" ]; then
+                        json_entries="${json_entries},"
+                    fi
+                    json_entries="${json_entries}\"${pci_id}\": \"${module_id}\""
+                    module_id=""
+                fi
+            done <<< "$gpu_mapping"
+
+            echo "{${json_entries}}" > /run/nvidia-fabricmanager/gpu-pci-module-mapping.json
+            echo "GPU mapping saved to /run/nvidia-fabricmanager/gpu-pci-module-mapping.json"
+        else
+            echo "Warning: Could not retrieve GPU PCI to Module ID mapping"
+        fi
+    else
+        echo "Warning: nvidia-smi not available for GPU mapping"
+    fi
 }
 
 # Stop persistenced and unload the kernel modules if they are currently loaded.
