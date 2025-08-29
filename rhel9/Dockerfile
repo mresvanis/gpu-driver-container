@@ -73,8 +73,9 @@ RUN if [ "$DRIVER_TYPE" != "vgpu" ]; then \
     dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
     dnf module enable -y nvidia-driver:${DRIVER_BRANCH}-dkms && \
     dnf install -y nvidia-fabric-manager-${DRIVER_VERSION}-1 nvidia-fabric-manager-devel-${DRIVER_VERSION}-1 libnvidia-nscq-${DRIVER_BRANCH}-${DRIVER_VERSION}-1 jsoncpp-devel gcc-c++ make && \
-    git clone https://github.com/NVIDIA/Fabric-Manager-Client.git && \
+    git clone https://github.com/mresvanis/Fabric-Manager-Client.git && \
     cd Fabric-Manager-Client && \
+    git checkout fix-ignoring-unix-socket && \
     make fmpm && \
     cp fmpm /usr/bin/ && \
     chmod +x /usr/bin/fmpm; fi
